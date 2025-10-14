@@ -1,0 +1,31 @@
+{
+  "name": "mi-sistema",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "seed:productos": "node src/seeders/seedProductos.js",
+    "seed:inventario": "node src/seeders/seedMovimientosInventario.js",
+    "seed:ventas": "node src/seeders/seedVentas.js",
+    "seed:clientes": "node src/seeders/clienteSeeder.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "pdf-to-printer": "^5.6.0",
+    "pdfmake": "^0.2.20",
+    "pg": "^8.16.0",
+    "sequelize": "^6.37.7"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  },
+  "description": ""
+}

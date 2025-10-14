@@ -1,0 +1,659 @@
+/* ===================== VARIABLES DE TEMA ===================== */
+:root {
+  /* Colores Teams - Modo Claro */
+  --primary: #6264a7;
+  --primary-hover: #464775;
+  --primary-light: #e8e8f5;
+  --secondary: #8b8cc7;
+  --accent: #5b5fc7;
+  
+  --success: #107c10;
+  --success-hover: #0c5c0c;
+  --success-light: #dff6dd;
+  
+  --warning: #f7630c;
+  --warning-light: #fff4ed;
+  
+  --error: #c4314b;
+  --error-hover: #9c2739;
+  --error-light: #fde7e9;
+  
+  --info: #0078d4;
+  --info-light: #deecf9;
+  
+  --bg-main: #f5f5f5;
+  --bg-card: #ffffff;
+  --bg-secondary: #fafafa;
+  --bg-hover: #f3f2f1;
+  
+  --text-primary: #252423;
+  --text-secondary: #605e5c;
+  --text-tertiary: #8a8886;
+  
+  --border: #e1dfdd;
+  --border-light: #edebe9;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.12);
+  
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  
+  --theme-toggle-bg: #f3f2f1;
+  --theme-toggle-hover: #e1dfdd;
+}
+
+[data-theme="dark"] {
+  /* Colores Teams - Modo Oscuro */
+  --primary: #7c7edd;
+  --primary-hover: #9c9ee6;
+  --primary-light: #33344a;
+  --secondary: #9c9ee6;
+  --accent: #8b8dff;
+  
+  --success: #54b054;
+  --success-hover: #6bc06b;
+  --success-light: #1e3a1e;
+  
+  --warning: #ff8c00;
+  --warning-light: #3d2b1f;
+  
+  --error: #e74856;
+  --error-hover: #f06470;
+  --error-light: #3d2229;
+  
+  --info: #4ba3f5;
+  --info-light: #1e3951;
+  
+  --bg-main: #1f1f1f;
+  --bg-card: #2d2d2d;
+  --bg-secondary: #252525;
+  --bg-hover: #3a3a3a;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #e1e1e1;
+  --text-tertiary: #b3b3b3;
+  
+  --border: #3f3f3f;
+  --border-light: #333333;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.5);
+  
+  --theme-toggle-bg: #3a3a3a;
+  --theme-toggle-hover: #4a4a4a;
+}
+
+/* ===================== CONTENEDOR PRINCIPAL ===================== */
+.container {
+  min-height: 100vh;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  padding: 24px;
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* ===================== HEADER ===================== */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subtitle {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ===================== CARD DE FILTROS ===================== */
+.filtersCard {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+}
+
+.filtersGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.input,
+.select {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: all 0.2s ease;
+}
+
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.input::placeholder {
+  color: var(--text-tertiary);
+}
+
+/* ===================== BOTONES ===================== */
+.actionsRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.primaryBtn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: var(--primary);
+  color: white;
+}
+
+.primaryBtn:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ===================== ALERTAS ===================== */
+.alertError {
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  font-size: 14px;
+  border-left: 4px solid;
+  background: var(--error-light);
+  border-color: var(--error);
+  color: var(--text-primary);
+}
+
+/* ===================== RESUMEN ===================== */
+.summaryCard {
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--info-light) 100%);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 24px;
+  display: flex;
+  gap: 32px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+}
+
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.summaryLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.summaryValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+/* ===================== PAGINACIÓN ===================== */
+.paginationBar {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+
+.paginationInfo {
+  font-size: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.paginationControls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.pageSizeLabel {
+  font-size: 14px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pageSizeSelect {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.paginationButtons {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.pageBtn {
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+  color: var(--text-primary);
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--primary-light);
+  border-color: var(--primary);
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageIndicator {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  padding: 0 8px;
+}
+
+/* ===================== TABLA ===================== */
+.tableCard {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1000px;
+}
+
+.table thead {
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table thead th {
+  padding: 16px 14px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid var(--border);
+}
+
+.table tbody tr {
+  border-bottom: 1px solid var(--border-light);
+  transition: background 0.15s ease;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.table tbody td {
+  padding: 14px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.colNumero {
+  font-family: 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.colMoney {
+  font-weight: 600;
+  color: var(--success);
+  text-align: right;
+}
+
+/* ===================== BADGES ===================== */
+.badgeMostrador,
+.badgeMesa,
+.badgeDelivery {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badgeMostrador {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.badgeMesa {
+  background: var(--warning-light);
+  color: var(--warning);
+  border: 1px solid var(--warning);
+}
+
+.badgeDelivery {
+  background: #e0f2f1;
+  color: #00796b;
+  border: 1px solid #00796b;
+}
+
+[data-theme="dark"] .badgeDelivery {
+  background: #1a3331;
+  color: #4db6ac;
+}
+
+/* ===================== ESTADO VACÍO ===================== */
+.emptyState {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 80px 40px;
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.emptyIcon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.emptyState p {
+  font-size: 16px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ===================== EXPORTAR ===================== */
+.exportCard {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border);
+}
+
+.exportTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.exportActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.csvLink,
+.exportAllBtn,
+.downloadLink {
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.csvLink {
+  background: var(--success);
+  color: white;
+  border: none;
+}
+
+.csvLink:hover {
+  background: var(--success-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.exportAllBtn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.exportAllBtn:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.exportAllBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.downloadLink {
+  background: var(--primary);
+  color: white;
+  border: none;
+  animation: pulse 2s infinite;
+}
+
+.downloadLink:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+@keyframes pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(98, 100, 167, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(98, 100, 167, 0);
+  }
+}
+
+/* ===================== BOTÓN DE TEMA ===================== */
+.themeToggle {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--theme-toggle-bg);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-lg);
+}
+
+.themeToggle:hover {
+  background: var(--theme-toggle-hover);
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.themeToggle:active {
+  transform: scale(0.95) rotate(-15deg);
+}
+
+.themeToggle span {
+  font-size: 24px;
+  transition: transform 0.3s ease;
+}
+
+/* ===================== RESPONSIVE ===================== */
+@media (max-width: 1200px) {
+  .paginationBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .paginationControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .summaryCard {
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+  
+  .title {
+    font-size: 24px;
+  }
+  
+  .filtersCard {
+    padding: 16px;
+  }
+  
+  .filtersGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .actionsRow {
+    flex-direction: column;
+  }
+  
+  .primaryBtn {
+    width: 100%;
+  }
+  
+  .summaryCard {
+    padding: 16px;
+  }
+  
+  .summaryValue {
+    font-size: 22px;
+  }
+  
+  .paginationButtons {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .exportActions {
+    flex-direction: column;
+  }
+  
+  .csvLink,
+  .exportAllBtn,
+  .downloadLink {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .themeToggle {
+    width: 48px;
+    height: 48px;
+    bottom: 16px;
+    right: 16px;
+  }
+  
+  .themeToggle span {
+    font-size: 20px;
+  }
+}

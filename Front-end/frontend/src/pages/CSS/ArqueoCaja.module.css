@@ -1,0 +1,203 @@
+/* src/components/ArqueoCaja.module.css */
+
+.arqueoCajaContainer {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.mainTitle {
+    font-size: 2.2em;
+    color: #343a40;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+    padding: 20px;
+    border: 1px solid #e9ecef;
+    margin-bottom: 20px;
+}
+
+.cardTitle {
+    font-size: 1.5em;
+    color: #495057;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #dee2e6;
+    padding-bottom: 10px;
+}
+
+.dateInput {
+    padding: 10px 15px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-size: 1em;
+    margin-right: 10px;
+    box-sizing: border-box;
+}
+
+.generateButton {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s ease;
+}
+
+.generateButton:hover {
+    background-color: #0056b3;
+}
+
+.generateButton:disabled {
+    background-color: #a0c9f1;
+    cursor: not-allowed;
+}
+
+.totalAmount {
+    font-size: 1.8em;
+    text-align: right;
+    margin-top: 20px;
+    color: #28a745;
+    font-weight: bold;
+}
+
+.metodoPagoSummary {
+    margin-top: 20px;
+    border-top: 1px dashed #ced4da;
+    padding-top: 15px;
+}
+
+.metodoPagoSummary h3 {
+    margin-top: 0;
+    color: #495057;
+}
+
+.metodoPagoSummary ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.metodoPagoSummary li {
+    padding: 5px 0;
+    font-size: 1.1em;
+    color: #343a40;
+}
+
+.tableContainer {
+    max-height: 400px;
+    overflow-y: auto;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.ventasTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ventasTable th,
+.ventasTable td {
+    padding: 10px;
+    border-bottom: 1px solid #dee2e6;
+    text-align: left;
+}
+
+.ventasTable th {
+    background-color: #e9ecef;
+    color: #495057;
+    font-weight: bold;
+}
+
+.ventasTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.noSalesMessage {
+    text-align: center;
+    color: #6c757d;
+    padding: 20px;
+    border: 1px dashed #ced4da;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+.closeButton {
+    background-color: #28a745;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em;
+    margin-top: 20px;
+    width: 100%;
+    transition: background-color 0.2s ease;
+}
+
+.closeButton:hover {
+    background-color: #218838;
+}
+
+.closeButton:disabled {
+    background-color: #82df97;
+    cursor: not-allowed;
+}
+
+/* Mensajes (misma lógica que en Ventas.module.css) */
+.messageBox {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-weight: bold;
+    z-index: 1000;
+    opacity: 1;
+    transition: opacity 0.5s ease-in-out;
+    animation: fadeOut 0.5s forwards 4.5s; /* Desvanecer después de 4.5s (5s total) */
+}
+
+.successMessage {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.errorMessage {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+/* Responsividad */
+@media (max-width: 768px) {
+    .arqueoCajaContainer {
+        padding: 10px;
+    }
+    .dateInput, .generateButton {
+        width: 100%;
+        margin-right: 0;
+        margin-bottom: 10px;
+    }
+    .generateButton {
+        margin-top: 10px;
+    }
+}

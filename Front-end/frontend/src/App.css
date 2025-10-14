@@ -1,0 +1,71 @@
+/* 🎨 Variables de tema */
+:root {
+  --navbar-bg: linear-gradient(to right, #ecf0f1, #bdc3c7);
+  --text: #2c3e50;
+  --background: #ffffff;
+  --card-bg: #ffffff;
+  --input-border: #ccc;
+  --button-bg: #e74c3c;
+  --button-text: #fff;
+}
+
+[data-theme='dark'] {
+  --navbar-bg: linear-gradient(to right, #2c3e50, #34495e);
+  --text: #ecf0f1;
+  --background: #1e1e1e;
+  --card-bg: #2c3e50;
+  --input-border: #555;
+  --button-bg: #c0392b;
+  --button-text: #fff;
+}
+
+/* 🌐 Aplicación global del tema */
+body {
+  background-color: var(--background);
+  color: var(--text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  font-family: 'Segoe UI', sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* 🧩 Estilos base */
+.App {
+  text-align: center;
+}
+
+.App-logo {
+  height: 40vmin;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .App-logo {
+    animation: App-logo-spin infinite 20s linear;
+  }
+}
+
+.App-header {
+  background-color: var(--card-bg);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: var(--text);
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+/* 🔄 Animación */
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

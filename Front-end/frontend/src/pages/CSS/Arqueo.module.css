@@ -1,0 +1,467 @@
+/* =========================================================
+   Tokens & Tema (inspirado en Microsoft Teams)
+   ========================================================= */
+:root {
+  /* Brand (Teams-ish) */
+  --brand-600: #6264a7;
+  --brand-700: #4f52a3;
+  --brand-800: #3e3f8c;
+
+  /* Base */
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --radius-xs: 6px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --easing: cubic-bezier(0.2, 0, 0, 1);
+  --shadow-1: 0 2px 10px rgba(0,0,0,.08), 0 1px 3px rgba(0,0,0,.08);
+
+  --font-size-sm: 12px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-weight-semibold: 600;
+}
+
+/* Claro */
+:root,
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface-2: #f7f7fb;
+  --text: #242424;
+  --text-muted: #5e5e5e;
+  --border: #e3e3e8;
+
+  --input-bg: #ffffff;
+  --input-border: #c9c9d5;
+  --focus-ring: #8f94ff;
+
+  --success-bg: #e9f7ef;
+  --success-text: #0b6a34;
+  --success-border: #bfe6cc;
+
+  --error-bg: #fdecea;
+  --error-text: #b42318;
+  --error-border: #f5c6c1;
+
+  --warn-bg: #fff7e6;
+  --warn-text: #7a5200;
+  --warn-border: #ffd48a;
+}
+
+/* Oscuro */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #0f0f10;
+  --surface: #1a1a1c;
+  --surface-2: #141416;
+  --text: #f3f3f4;
+  --text-muted: #c4c6d0;
+  --border: #2b2b30;
+
+  --input-bg: #121214;
+  --input-border: #3a3a42;
+  --focus-ring: #7a7fff;
+
+  --success-bg: #0c2d1a;
+  --success-text: #a6f4c5;
+  --success-border: #174129;
+
+  --error-bg: #3b1210;
+  --error-text: #ffb3ab;
+  --error-border: #5a1a17;
+
+  --warn-bg: #3b2a0e;
+  --warn-text: #ffd28a;
+  --warn-border: #5b4315;
+}
+
+/* =========================================================
+   Layout general
+   ========================================================= */
+.container {
+  min-height: 100%;
+  padding: var(--space-6) var(--space-4);
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: var(--font-size-base);
+}
+
+/* =========================================================
+   Alerts / Mensajes
+   ========================================================= */
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: var(--font-size-base);
+  margin-bottom: var(--space-4);
+}
+
+.alertSuccess {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border-color: var(--success-border);
+}
+
+.alertError {
+  background: var(--error-bg);
+  color: var(--error-text);
+  border-color: var(--error-border);
+}
+
+.alertWarning {
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  border-color: var(--warn-border);
+}
+
+/* =========================================================
+   Tarjeta selector de fecha + acción
+   ========================================================= */
+.dateCard {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-4);
+  align-items: end;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-1);
+  margin-bottom: var(--space-5);
+}
+
+.dateGroup {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.dateInput {
+  appearance: none;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: var(--font-size-base);
+  color: var(--text);
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  transition: border-color .15s var(--easing), box-shadow .15s var(--easing), background-color .15s var(--easing);
+}
+.dateInput:focus {
+  outline: none;
+  border-color: var(--brand-600);
+  box-shadow: 0 0 0 3px rgba(143,148,255,.35);
+}
+
+/* Botón primario y variantes */
+.primaryBtn,
+.closeBtn {
+  appearance: none;
+  border: 0;
+  padding: 10px 14px;
+  font-size: var(--font-size-lg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(180deg, var(--brand-600), var(--brand-700));
+  box-shadow: 0 1px 0 rgba(255,255,255,.1) inset, 0 2px 8px rgba(0,0,0,.12);
+  transition: transform .02s ease, background-color .15s var(--easing), box-shadow .15s var(--easing);
+}
+.primaryBtn:hover,
+.closeBtn:hover { background: linear-gradient(180deg, var(--brand-700), var(--brand-800)); }
+.primaryBtn:active,
+.closeBtn:active { transform: translateY(1px); }
+.primaryBtn:disabled,
+.closeBtn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* =========================================================
+   Cards / Secciones
+   ========================================================= */
+.arqueoCard,
+.cajaCard,
+.historialCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-1);
+  margin-bottom: var(--space-5);
+}
+
+.cardTitle {
+  margin: 0 0 var(--space-2);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.cardSubtitle {
+  margin: 0 0 var(--space-4);
+  color: var(--text-muted);
+}
+
+/* Hero total */
+.totalHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: linear-gradient(0deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+.totalLabel {
+  color: var(--text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+.totalValue {
+  font-size: 24px;
+  font-weight: 800;
+}
+
+/* Métodos de pago */
+.metodosGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+.metodoCard {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+.metodoIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: var(--surface-2);
+  font-size: 18px;
+}
+.metodoLabel { color: var(--text-muted); font-size: var(--font-size-sm); }
+.metodoValue { font-weight: 700; }
+
+/* Titulares de sección */
+.sectionTitle {
+  margin: 0 0 var(--space-3);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text);
+}
+
+/* =========================================================
+   Tabla
+   ========================================================= */
+.tableCard {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+}
+
+.tableWrapper {
+  width: 100%;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 720px;
+  background: var(--surface);
+}
+.table th,
+.table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  font-size: var(--font-size-base);
+  color: var(--text);
+}
+.table thead th {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-weight: var(--font-weight-semibold);
+}
+.colFactura { font-variant-numeric: tabular-nums; }
+.colMoney {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* Badges por método de pago: Efectivo, Tarjeta, Transferencia */
+.badgeEfectivo,
+.badgeTarjeta,
+.badgeTransferencia,
+.badgeIngreso,
+.badgeEgreso,
+.badgeVentas {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  border: 1px solid transparent;
+}
+
+/* Métodos */
+.badgeEfectivo { background: #eafaf0; color: #0b6a34; border-color: #c9f0d7; }
+.badgeTarjeta { background: #eef1ff; color: #3e3f8c; border-color: #d9ddff; }
+.badgeTransferencia { background: #e6f5ff; color: #0b5d8a; border-color: #c6e9ff; }
+
+/* Ingreso / Egreso */
+.badgeIngreso { background: var(--success-bg); color: var(--success-text); border-color: var(--success-border); }
+.badgeEgreso  { background: var(--error-bg);   color: var(--error-text);   border-color: var(--error-border); }
+
+/* Ventas (contador) */
+.badgeVentas { background: var(--surface-2); color: var(--text); border-color: var(--border); }
+
+/* Acciones inferiores */
+.actionRow {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-4);
+}
+
+/* Estado vacío y carga */
+.emptyState {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  color: var(--text-muted);
+  text-align: center;
+}
+.emptyIcon {
+  font-size: 28px;
+}
+
+.loadingState {
+  display: grid;
+  place-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  color: var(--text-muted);
+}
+.spinner {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 3px solid rgba(127,127,255,.25);
+  border-top-color: var(--brand-600);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Caja – Resumen */
+.cajaResumenGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin: var(--space-4) 0 var(--space-5);
+}
+.cajaResumenItem {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-1);
+}
+.cajaResumenIcon {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: 10px;
+  background: var(--surface-2);
+}
+.cajaResumenLabel { color: var(--text-muted); font-size: var(--font-size-sm); }
+.cajaResumenValue { font-weight: 800; font-size: 18px; }
+
+.saldoNeto {
+  background: linear-gradient(0deg, var(--surface-2), var(--surface));
+  border: 1px solid var(--border);
+}
+
+/* =========================================================
+   Botón flotante: Toggle de Tema
+   ========================================================= */
+.themeToggle {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-1);
+  cursor: pointer;
+  transition: transform .06s ease, background-color .15s var(--easing), color .15s var(--easing), border-color .15s var(--easing);
+}
+.themeToggle:hover { transform: translateY(-1px); }
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+@media (max-width: 980px) {
+  .metodosGrid { grid-template-columns: 1fr; }
+  .cajaResumenGrid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .header { flex-direction: column; gap: var(--space-2); }
+  .dateCard { grid-template-columns: 1fr; }
+  .totalHero { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+  .table { min-width: 560px; } /* scroll horizontal suave en móviles */
+    .actionRow { justify-content: center; } /* centrar botón en móviles */
+}
