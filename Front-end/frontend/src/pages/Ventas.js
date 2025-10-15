@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import axios from 'axios';
 import styles from './CSS/Ventas.module.css';
-import { useRefresh } from './context/RefreshContext';
 
 /* ===================== API base ====================== */
 const API_URL =
@@ -18,6 +17,7 @@ function useDebounce(value, delay) {
   }, [value, delay]);
   return debounced;
 }
+
 function normalizeTxt(s = '') {
   return String(s)
     .toLowerCase()
@@ -26,6 +26,7 @@ function normalizeTxt(s = '') {
     .replace(/\s+/g, ' ')
     .trim();
 }
+
 const formatGsPY = (n) => Number(n).toLocaleString('es-PY');
 
 /* ====== Helpers Mesas (unificar lógica por `tipo`) ====== */
@@ -35,6 +36,7 @@ function inferirTipoMesa(m) {
   if (n.startsWith('t') || n.includes('terraza')) return 'terraza';
   return 'normal';
 }
+
 function ordenarMesas(arr) {
   return [...arr].sort((a, b) => {
     const numA = parseInt(String(a.nombre).match(/\d+/)?.[0] ?? '0', 10);
@@ -42,6 +44,7 @@ function ordenarMesas(arr) {
     return numA - numB;
   });
 }
+
 function splitMesasPorTipo(lista) {
   const normal = (lista || []).filter((m) => inferirTipoMesa(m) === 'normal');
   const terraza = (lista || []).filter((m) => inferirTipoMesa(m) === 'terraza');
@@ -59,6 +62,7 @@ const Ventas = () => {
   const [mensaje, setMensaje] = useState('');
   const [metodoPago, setMetodoPago] = useState('efectivo');
   const [procesando, setProcesando] = useState(false);
+  const [theme, setTheme] = useState('light');
 
   /* Buscadores */
   const [clienteBusqueda, setClienteBusqueda] = useState('');
@@ -75,7 +79,7 @@ const Ventas = () => {
   const productoSearchInputRef = useRef(null);
   const clienteSearchInputRef = useRef(null);
 
-  /* ====== Modo/pedido (ahora con terraza) ====== */
+  /* ====== Modo/pedido ====== */
   const [modo, setModo] = useState('mostrador');
   const [mesas, setMesas] = useState([]);
   const [mesasTerraza, setMesasTerraza] = useState([]);
@@ -88,9 +92,18 @@ const Ventas = () => {
     costo_envio: 0,
     repartidor: '',
   });
-  const [deliveryActivos, setDeliveryActivos] = useState([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [cancelando, setCancelando] = useState(false);
+  const [showClienteDropdown, setShowClienteDropdown] = useState(false);
+
+  // Cambiar tema
+  const toggleTheme = () => {
+    setTheme(theme === 'light' ? 'dark' : 'light');
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     axios
@@ -110,7 +123,6 @@ const Ventas = () => {
     }
   }, [mensaje]);
 
-  // Cargar mesas según el tipo
   useEffect(() => {
     if (modo === 'mesa' || modo === 'terraza') {
       axios
@@ -124,7 +136,6 @@ const Ventas = () => {
     }
   }, [modo]);
 
-  // Derivar categorías
   useEffect(() => {
     if (!Array.isArray(productos)) {
       setCategorias([]);
@@ -134,7 +145,7 @@ const Ventas = () => {
     unicas.sort((a, b) => String(a).localeCompare(String(b), 'es'));
     setCategorias(unicas);
     if (categoriaFiltro && !unicas.includes(categoriaFiltro)) setCategoriaFiltro('');
-  }, [productos]);
+  }, [productos, categoriaFiltro]);
 
   const productosFiltrados = useMemo(() => {
     const q = normalizeTxt(finalProductoBusqueda);
@@ -181,6 +192,7 @@ const Ventas = () => {
     setVenta({ ...venta, cliente_id: cliente.id });
     const text = `${cliente.nombre}${cliente.ruc ? ` - ${cliente.ruc}` : ''}`;
     setClienteBusqueda(text);
+    setShowClienteDropdown(false);
   };
 
   const seleccionarConsumidorFinal = () => {
@@ -195,9 +207,7 @@ const Ventas = () => {
 
   const handleSeleccionarProducto = (prod) => {
     setSelectedProducto(prod);
-    setProductoBusqueda(`${
-      prod.nombre
-    } - Gs. ${formatGsPY(prod.precio)}`);
+    setProductoBusqueda(`${prod.nombre} - Gs. ${formatGsPY(prod.precio)}`);
     setCantidadProducto(1);
   };
 
@@ -234,7 +244,6 @@ const Ventas = () => {
       }
     });
 
-    // Modo con pedido: enviar comanda
     if (modo !== 'mostrador') {
       let pid = pedidoId;
       if ((modo === 'mesa' || modo === 'terraza') && mesaSeleccionada && !pid) {
@@ -349,11 +358,23 @@ const Ventas = () => {
   };
 
   const handleRegistrarVenta = async () => {
+    // Validación 1: Verificar que haya productos
     if (!venta.detalles.length && !pedidoId) return setMensaje('Error: Agregue al menos un producto.');
+    
+    // Validación 2: Verificar que haya un cliente seleccionado
+    if (!selectedCliente && !venta.cliente_id) {
+      setMensaje('Error: Debe seleccionar un cliente antes de cobrar.');
+      return;
+    }
+    
     if (procesando) return;
     setProcesando(true);
+    
     try {
       let id;
+      let pedidoIdACerrar = null;
+      let mesaIdALiberar = null;
+      
       if (modo === 'mostrador') {
         const body = {
           cliente_id: venta.cliente_id ?? (selectedCliente?.id ?? null),
@@ -364,10 +385,24 @@ const Ventas = () => {
         const res = await axios.post(`${API_URL}/ventas`, body);
         id = res.data.id;
       } else {
-        if (!pedidoId) return setMensaje('No hay pedido abierto para cobrar.');
+        if (!pedidoId) {
+          setProcesando(false);
+          return setMensaje('No hay pedido abierto para cobrar.');
+        }
+        
         const { data: dets } = await axios.get(`${API_URL}/pedidos/${pedidoId}/detalles`);
-        if (!dets || dets.length === 0)
+        if (!dets || dets.length === 0) {
+          setProcesando(false);
           return setMensaje('Este pedido no tiene ítems. Agregue productos antes de facturar.');
+        }
+        
+        pedidoIdACerrar = pedidoId;
+        
+        // Guardar el ID de la mesa para liberarla después
+        if ((modo === 'mesa' || modo === 'terraza') && mesaSeleccionada) {
+          mesaIdALiberar = mesaSeleccionada.id;
+        }
+        
         const res = await axios.post(`${API_URL}/ventas`, {
           pedido_id: pedidoId,
           metodo_pago: metodoPago,
@@ -375,15 +410,58 @@ const Ventas = () => {
         id = res.data.id;
       }
 
+      // Cerrar el pedido después de registrar la venta
+      if (pedidoIdACerrar) {
+        try {
+          await axios.patch(`${API_URL}/pedidos/${pedidoIdACerrar}/estado`, { 
+            estado: 'completado' 
+          });
+        } catch (e) {
+          console.warn('No se pudo cerrar el pedido:', e);
+        }
+      }
+
+      // Liberar la mesa explícitamente
+      if (mesaIdALiberar) {
+        try {
+          await axios.patch(`${API_URL}/mesas/${mesaIdALiberar}`, {
+            estado: 'libre',
+            pedido_abierto_id: null
+          });
+        } catch (e) {
+          console.warn('No se pudo liberar la mesa:', e);
+        }
+      }
+
       setMensaje('Venta registrada exitosamente.');
+      
       try {
         window.open(`${API_URL}/factura/${id}?autoprint=1&close=1`, '_blank');
       } catch (e) {
         console.warn('No se pudo abrir factura', e);
       }
 
+      // IMPORTANTE: Limpiar TODO antes de refrescar mesas
+      resetearVenta();
+      setPedidoId(null);
+      setMesaSeleccionada(null);
+      
+      // Limpiar delivery si es el caso
+      if (modo === 'delivery') {
+        setDeliveryData({ 
+          telefono: '', 
+          direccion: '', 
+          referencia: '', 
+          costo_envio: 0, 
+          repartidor: '' 
+        });
+      }
+
+      // Refrescar mesas DESPUÉS de liberar
       if (modo === 'mesa' || modo === 'terraza') {
         try {
+          // Pequeño delay para asegurar que el backend procesó todo
+          await new Promise(resolve => setTimeout(resolve, 300));
           const m = await axios.get(`${API_URL}/mesas`);
           const { normal, terraza } = splitMesasPorTipo(m.data || []);
           setMesas(normal);
@@ -391,11 +469,8 @@ const Ventas = () => {
         } catch (e) {
           console.warn('No se pudo refrescar mesas', e);
         }
-        setMesaSeleccionada(null);
-        setPedidoId(null);
       }
-
-      resetearVenta();
+      
     } catch (err) {
       const errorMsg =
         err.response?.data?.message ?? err.response?.data?.error ?? err.message;
@@ -484,7 +559,6 @@ const Ventas = () => {
   async function handleCancelarVenta() {
     if (cancelando) return;
 
-    // Validación extra: si es mesa/terraza pero no hay pedidoId
     if ((modo === 'mesa' || modo === 'terraza') && !pedidoId) {
       setMensaje('No hay pedido abierto para esta mesa.');
       return;
@@ -560,125 +634,90 @@ const Ventas = () => {
     }
   };
 
-  const ModoTabs = () => (
-    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-      <button
-        style={{
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          backgroundColor: modo === 'mostrador' ? '#2563eb' : '#e5e7eb',
-          color: modo === 'mostrador' ? 'white' : '#374151',
-          fontWeight: '500',
-        }}
-        onClick={() => {
-          setModo('mostrador');
-          setPedidoId(null);
-          setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
-          setMesaSeleccionada(null);
-        }}
-      >
-        Mostrador
-      </button>
-      <button
-        style={{
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          backgroundColor: modo === 'mesa' ? '#2563eb' : '#e5e7eb',
-          color: modo === 'mesa' ? 'white' : '#374151',
-          fontWeight: '500',
-        }}
-        onClick={() => {
-          setModo('mesa');
-          setPedidoId(null);
-          setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
-        }}
-      >
-        Mesas
-      </button>
-      <button
-        style={{
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          backgroundColor: modo === 'terraza' ? '#2563eb' : '#e5e7eb',
-          color: modo === 'terraza' ? 'white' : '#374151',
-          fontWeight: '500',
-        }}
-        onClick={() => {
-          setModo('terraza');
-          setPedidoId(null);
-          setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
-        }}
-      >
-        Terraza
-      </button>
-      <button
-        style={{
-          padding: '8px 16px',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer',
-          backgroundColor: modo === 'delivery' ? '#2563eb' : '#e5e7eb',
-          color: modo === 'delivery' ? 'white' : '#374151',
-          fontWeight: '500',
-        }}
-        onClick={() => {
-          setModo('delivery');
-          setPedidoId(null);
-          setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
-        }}
-      >
-        Delivery
-      </button>
-    </div>
-  );
-
   /* ==================== UI ==================== */
   return (
-    <div style={{ padding: '20px', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className={styles.ventasContainer}>
+      {/* Botón cambio de tema */}
+      <button className={styles.themeToggle} onClick={toggleTheme} aria-label="Cambiar tema">
+        <span>{theme === 'light' ? '🌙' : '☀️'}</span>
+      </button>
+
       {/* Mensaje global */}
       {mensaje && (
-        <div
-          style={{
-            padding: '12px',
-            marginBottom: '16px',
-            borderRadius: '4px',
-            backgroundColor: mensaje.startsWith('Error') ? '#fee2e2' : '#dcfce7',
-            color: mensaje.startsWith('Error') ? '#991b1b' : '#166534',
-            border: `1px solid ${mensaje.startsWith('Error') ? '#fca5a5' : '#86efac'}`,
-          }}
-        >
+        <div className={`${styles.messageBox} ${mensaje.startsWith('Error') ? styles.errorMessage : styles.successMessage}`}>
           {mensaje}
         </div>
       )}
 
-      {/* Encabezado */}
-      <div style={{ marginBottom: '24px' }}>
-        <ModoTabs />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-          <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
-            Modo: <strong>{modo.toUpperCase()}</strong>
-            {modo !== 'mostrador' && pedidoId ? (
-              <> – Pedido: <strong>{pedidoId.slice(0, 8)}…</strong></>
-            ) : null}
-            {(modo === 'mesa' || modo === 'terraza') && mesaSeleccionada ? (
-              <> – Mesa: <strong>{mesaSeleccionada.nombre}</strong></>
-            ) : null}
-          </p>
+      {/* Header */}
+      <div className={styles.pageHeader}>
+        <div className={styles.headerTop}>
+          <div className={styles.modeArea}>
+            {/* Tabs de modo */}
+            <div className={styles.modoTabs}>
+              <button
+                className={`${styles.tab} ${modo === 'mostrador' ? styles.tabActive : ''}`}
+                onClick={() => {
+                  setModo('mostrador');
+                  setPedidoId(null);
+                  setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
+                  setMesaSeleccionada(null);
+                }}
+              >
+                Mostrador
+              </button>
+              <button
+                className={`${styles.tab} ${modo === 'mesa' ? styles.tabActive : ''}`}
+                onClick={() => {
+                  setModo('mesa');
+                  setPedidoId(null);
+                  setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
+                }}
+              >
+                Mesas
+              </button>
+              <button
+                className={`${styles.tab} ${modo === 'terraza' ? styles.tabActive : ''}`}
+                onClick={() => {
+                  setModo('terraza');
+                  setPedidoId(null);
+                  setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
+                }}
+              >
+                Terraza
+              </button>
+              <button
+                className={`${styles.tab} ${modo === 'delivery' ? styles.tabActive : ''}`}
+                onClick={() => {
+                  setModo('delivery');
+                  setPedidoId(null);
+                  setDeliveryData({ telefono: '', direccion: '', referencia: '', costo_envio: 0, repartidor: '' });
+                }}
+              >
+                Delivery
+              </button>
+            </div>
 
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <div style={{ fontSize: '18px', fontWeight: '600' }}>
-              Total: Gs. {formatGsPY(calcularTotal())}
+            <p className={styles.modeBadge}>
+              Modo: <strong>{modo.toUpperCase()}</strong>
+              {modo !== 'mostrador' && pedidoId && (
+                <> — Pedido: <strong>{pedidoId.slice(0, 8)}…</strong></>
+              )}
+              {(modo === 'mesa' || modo === 'terraza') && mesaSeleccionada && (
+                <> — Mesa: <strong>{mesaSeleccionada.nombre}</strong></>
+              )}
+            </p>
+          </div>
+
+          <div className={styles.payArea}>
+            <div className={styles.totalBox}>
+              <span>Total</span>
+              <strong>Gs. {formatGsPY(calcularTotal())}</strong>
             </div>
             <select
               value={metodoPago}
               onChange={(e) => setMetodoPago(e.target.value)}
-              style={{ padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
+              className={styles.payMethodSelect}
             >
               <option value="efectivo">Efectivo</option>
               <option value="tarjeta">Tarjeta</option>
@@ -687,30 +726,14 @@ const Ventas = () => {
             <button
               onClick={handleRegistrarVenta}
               disabled={procesando}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: procesando ? '#9ca3af' : '#10b981',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: procesando ? 'not-allowed' : 'pointer',
-                fontWeight: '600',
-              }}
+              className={styles.chargeButton}
             >
               {procesando ? 'Procesando…' : 'Cobrar'}
             </button>
             <button
               onClick={handleCancelarVenta}
               disabled={cancelando}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: cancelando ? '#9ca3af' : '#ef4444',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: cancelando ? 'not-allowed' : 'pointer',
-                fontWeight: '600',
-              }}
+              className={styles.cancelButton}
             >
               {cancelando ? 'Cancelando…' : 'Cancelar'}
             </button>
@@ -718,200 +741,146 @@ const Ventas = () => {
         </div>
 
         {/* Filtros */}
-        <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
-          <div style={{ flex: 1 }}>
-            <input
-              type="text"
-              placeholder="Buscar producto (F2)..."
-              value={productoBusqueda}
-              onChange={(e) => {
-                setProductoBusqueda(e.target.value);
-                setSelectedProducto(null);
-              }}
-              onKeyDown={onProductoSearchKeyDown}
-              ref={productoSearchInputRef}
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
-            />
+        <div className={styles.headerFilters}>
+          <div className={styles.filterLeft}>
+            <div className={styles.inputWithIconLarge}>
+              <span>🔍</span>
+              <input
+                type="text"
+                placeholder="Buscar producto (F2)..."
+                value={productoBusqueda}
+                onChange={(e) => {
+                  setProductoBusqueda(e.target.value);
+                  setSelectedProducto(null);
+                }}
+                onKeyDown={onProductoSearchKeyDown}
+                ref={productoSearchInputRef}
+              />
+            </div>
+            <div className={styles.categoryFilter}>
+              <select
+                value={categoriaFiltro}
+                onChange={(e) => setCategoriaFiltro(e.target.value)}
+                className={styles.categorySelect}
+              >
+                <option value="">Todas las categorías</option>
+                {categorias.map((c, i) => (
+                  <option key={i} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
-          <div style={{ width: '200px' }}>
-            <select
-              value={categoriaFiltro}
-              onChange={(e) => setCategoriaFiltro(e.target.value)}
-              style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
-            >
-              <option value="">Todas las categorías</option>
-              {categorias.map((c, i) => (
-                <option key={i} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div style={{ flex: 1, position: 'relative' }}>
-            {selectedCliente ? (
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span>
-                  {selectedCliente.nombre} {selectedCliente.ruc ? `· RUC ${selectedCliente.ruc}` : ''}
-                </span>
-                <button
-                  onClick={resetearCliente}
-                  style={{ padding: '4px 12px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer' }}
-                >
-                  Cambiar
-                </button>
-              </div>
-            ) : (
-              <>
-                <input
-                  type="text"
-                  placeholder="Cliente (F3)..."
-                  value={clienteBusqueda}
-                  onChange={(e) => setClienteBusqueda(e.target.value)}
-                  ref={clienteSearchInputRef}
-                  style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
-                />
-                {finalClienteBusqueda && (
-                  <ul
-                    style={{
-                      position: 'absolute',
-                      top: '100%',
-                      left: 0,
-                      right: 0,
-                      backgroundColor: 'white',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '4px',
-                      marginTop: '4px',
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      listStyle: 'none',
-                      padding: 0,
-                      margin: 0,
-                      zIndex: 10,
-                    }}
-                  >
-                    {clientesFiltrados.length > 0 ? (
-                      clientesFiltrados.map((c) => (
-                        <li
-                          key={c.id}
-                          onClick={() => handleSeleccionarCliente(c)}
-                          style={{ padding: '8px', cursor: 'pointer', borderBottom: '1px solid #f3f4f6' }}
-                        >
-                          {c.nombre} {c.ruc ? `- ${c.ruc}` : ''}
+
+          <div className={styles.filterRight}>
+            <div className={styles.relative}>
+              {selectedCliente ? (
+                <div className={styles.clientPill}>
+                  <span className={styles.clientName}>
+                    {selectedCliente.nombre} {selectedCliente.ruc ? `· RUC ${selectedCliente.ruc}` : ''}
+                  </span>
+                  <button onClick={resetearCliente} className={styles.clientChangeBtn}>
+                    Cambiar
+                  </button>
+                </div>
+              ) : (
+                <div className={styles.clientSearchGroup}>
+                  <div className={styles.inputWithIconLarge}>
+                    <span>👤</span>
+                    <input
+                      type="text"
+                      placeholder="Cliente (F3)..."
+                      value={clienteBusqueda}
+                      onChange={(e) => {
+                        setClienteBusqueda(e.target.value);
+                        setShowClienteDropdown(true);
+                      }}
+                      onFocus={() => setShowClienteDropdown(true)}
+                      ref={clienteSearchInputRef}
+                    />
+                  </div>
+                  <button onClick={seleccionarConsumidorFinal} className={styles.quickBtn}>
+                    CF
+                  </button>
+                  {showClienteDropdown && finalClienteBusqueda && (
+                    <ul className={styles.dropdownList}>
+                      {clientesFiltrados.length > 0 ? (
+                        clientesFiltrados.map((c) => (
+                          <li
+                            key={c.id}
+                            onClick={() => handleSeleccionarCliente(c)}
+                          >
+                            {c.nombre} {c.ruc ? `- ${c.ruc}` : ''}
+                          </li>
+                        ))
+                      ) : (
+                        <li className={styles.noResultsInline}>
+                          <span>Sin coincidencias.</span>
+                          <button
+                            onClick={() => setMostrarModalCliente(true)}
+                            className={styles.linkBtn}
+                          >
+                            Agregar nuevo
+                          </button>
                         </li>
-                      ))
-                    ) : (
-                      <li style={{ padding: '8px', color: '#6b7280' }}>
-                        Sin coincidencias.
-                        <button
-                          onClick={() => setMostrarModalCliente(true)}
-                          style={{
-                            marginLeft: '8px',
-                            color: '#2563eb',
-                            background: 'none',
-                            border: 'none',
-                            cursor: 'pointer',
-                            textDecoration: 'underline',
-                          }}
-                        >
-                          Agregar nuevo
-                        </button>
-                      </li>
-                    )}
-                  </ul>
-                )}
-                <button
-                  onClick={seleccionarConsumidorFinal}
-                  style={{
-                    position: 'absolute',
-                    right: '8px',
-                    top: '8px',
-                    padding: '4px 8px',
-                    fontSize: '12px',
-                    borderRadius: '4px',
-                    border: '1px solid #d1d5db',
-                    cursor: 'pointer',
-                  }}
-                >
-                  CF
-                </button>
-              </>
-            )}
+                      )}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Cuerpo en 3 columnas */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px' }}>
+      {/* Grid principal: 3 columnas */}
+      <div className={styles.mainGrid}>
         {/* Columna 1: Productos */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          <h2 style={{ marginTop: 0, fontSize: '18px', fontWeight: '600' }}>Productos</h2>
+        <div className={styles.colCard}>
+          <h2 className={styles.cardTitle}>Productos</h2>
           {productoBusqueda && !selectedProducto && (
-            <ul style={{ listStyle: 'none', padding: 0, maxHeight: '400px', overflowY: 'auto' }}>
+            <ul className={styles.resultsList}>
               {Array.isArray(productosFiltrados) && productosFiltrados.length > 0 ? (
                 productosFiltrados.map((prod, idx) => (
                   <li
                     key={prod.id}
                     onClick={() => handleSeleccionarProducto(prod)}
-                    style={{
-                      padding: '12px',
-                      marginBottom: '8px',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      backgroundColor: idx === activeIdx ? '#eff6ff' : 'white',
-                    }}
+                    className={`${styles.resultItem} ${idx === activeIdx ? styles.resultActive : ''}`}
                   >
-                    <div style={{ fontWeight: '500' }}>{prod.nombre}</div>
-                    <div style={{ fontSize: '14px', color: '#6b7280', marginTop: '4px' }}>
+                    <div className={styles.resultName}>{prod.nombre}</div>
+                    <div className={styles.resultMeta}>
                       <span>Gs. {formatGsPY(prod.precio)}</span>
-                      <span style={{ marginLeft: '12px' }}>
+                      <span className={styles.resultStock}>
                         Stock: {typeof prod.stock === 'number' ? prod.stock : '-'}
                       </span>
                     </div>
                   </li>
                 ))
               ) : (
-                <p style={{ color: '#6b7280' }}>No se encontró el producto.</p>
+                <div className={styles.noResults}>No se encontró el producto.</div>
               )}
             </ul>
           )}
 
           {selectedProducto && (
-            <div style={{ padding: '16px', backgroundColor: '#f9fafb', borderRadius: '4px' }}>
-              <div style={{ marginBottom: '12px' }}>
+            <div className={styles.selectedProductBox}>
+              <div className={styles.selectedLine}>
                 <strong>{selectedProducto.nombre}</strong>
-                <div style={{ fontSize: '14px', color: '#6b7280' }}>
-                  Gs. {formatGsPY(selectedProducto.precio)} · Stock:{' '}
-                  {typeof selectedProducto.stock === 'number' ? selectedProducto.stock : '-'}
-                </div>
+                <span>Gs. {formatGsPY(selectedProducto.precio)}</span>
               </div>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <label>Cant.</label>
+              <div className={styles.selectedSub}>
+                Stock: {typeof selectedProducto.stock === 'number' ? selectedProducto.stock : '-'}
+              </div>
+              <div className={styles.qtyRow}>
+                <label>Cantidad</label>
                 <input
                   type="number"
                   min="1"
                   value={cantidadProducto}
                   onChange={(e) => setCantidadProducto(e.target.value)}
-                  style={{ width: '80px', padding: '4px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                 />
-                <button
-                  onClick={handleAddProducto}
-                  style={{
-                    padding: '6px 12px',
-                    backgroundColor: '#10b981',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                  }}
-                >
+                <button onClick={handleAddProducto} className={styles.addBtn}>
                   Agregar
                 </button>
               </div>
@@ -920,129 +889,98 @@ const Ventas = () => {
         </div>
 
         {/* Columna 2: Carrito */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
-          <h2 style={{ marginTop: 0, fontSize: '18px', fontWeight: '600' }}>Carrito</h2>
+        <div className={`${styles.colCard} ${styles.cartCol}`}>
+          <h2 className={styles.cardTitle}>Carrito</h2>
           {venta.detalles.length === 0 ? (
-            <p style={{ color: '#6b7280' }}>No se han agregado productos.</p>
+            <div className={styles.emptyCartMessage}>No se han agregado productos.</div>
           ) : (
-            <div>
-              {venta.detalles.map((item, idx) => (
-                <div
-                  key={idx}
-                  style={{ padding: '12px', marginBottom: '8px', border: '1px solid #e5e7eb', borderRadius: '4px' }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                    <strong>{item.nombre}</strong>
-                    <button
-                      onClick={() => handleRemoveProducto(idx)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#ef4444',
-                        cursor: 'pointer',
-                        fontSize: '16px',
-                      }}
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                    <button
-                      onClick={() => handleEditCantidadProducto(idx, item.cantidad - 1)}
-                      style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer' }}
-                    >
-                      -
-                    </button>
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.cantidad}
-                      onChange={(e) => handleEditCantidadProducto(idx, e.target.value)}
-                      style={{
-                        width: '60px',
-                        padding: '4px',
-                        borderRadius: '4px',
-                        border: '1px solid #d1d5db',
-                        textAlign: 'center',
-                      }}
-                    />
-                    <button
-                      onClick={() => handleEditCantidadProducto(idx, item.cantidad + 1)}
-                      style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #d1d5db', cursor: 'pointer' }}
-                    >
-                      +
-                    </button>
-                    <span style={{ marginLeft: 'auto', fontWeight: '600' }}>
-                      Gs. {formatGsPY(item.subtotal)}
-                    </span>
-                  </div>
+            <>
+              <div className={styles.tableWrap}>
+                <table className={styles.cartTable}>
+                  <thead>
+                    <tr>
+                      <th className={styles.thSticky}>Producto</th>
+                      <th className={styles.thStickySmall}>Cantidad</th>
+                      <th className={styles.thSticky}>Precio</th>
+                      <th className={styles.thSticky}>Subtotal</th>
+                      <th className={styles.thStickySmall}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {venta.detalles.map((item, idx) => (
+                      <tr key={idx}>
+                        <td className={styles.tdName}>{item.nombre}</td>
+                        <td className={styles.tdQty}>
+                          <button
+                            onClick={() => handleEditCantidadProducto(idx, item.cantidad - 1)}
+                            className={styles.qtyBtn}
+                          >
+                            -
+                          </button>
+                          <input
+                            type="number"
+                            min="1"
+                            value={item.cantidad}
+                            onChange={(e) => handleEditCantidadProducto(idx, e.target.value)}
+                          />
+                          <button
+                            onClick={() => handleEditCantidadProducto(idx, item.cantidad + 1)}
+                            className={styles.qtyBtn}
+                          >
+                            +
+                          </button>
+                        </td>
+                        <td className={styles.tdMoney}>Gs. {formatGsPY(item.precio_unitario)}</td>
+                        <td className={styles.tdMoney}>Gs. {formatGsPY(item.subtotal)}</td>
+                        <td className={styles.tdActions}>
+                          <button
+                            onClick={() => handleRemoveProducto(idx)}
+                            className={styles.removeBtn}
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className={styles.cartFooterSticky}>
+                <div>
+                  <span>Total:</span>
+                  <strong>Gs. {formatGsPY(calcularTotal())}</strong>
                 </div>
-              ))}
-            </div>
+              </div>
+            </>
           )}
         </div>
 
-        {/* Columna 3: Contexto (Mesas / Terraza / Delivery) */}
-        <div
-          style={{
-            backgroundColor: 'white',
-            padding: '20px',
-            borderRadius: '8px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}
-        >
+        {/* Columna 3: Contexto (Mesas/Terraza/Delivery) */}
+        <div className={`${styles.colCard} ${styles.contextPanel}`}>
           {(modo === 'mesa' || modo === 'terraza') && (
             <div>
-              <h2 style={{ marginTop: 0, fontSize: '18px', fontWeight: '600' }}>
+              <h2 className={styles.cardTitle}>
                 {modo === 'terraza' ? 'Mesas Terraza' : 'Mesas'}
               </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '8px' }}>
+              <div className={styles.mesaGrid}>
                 {(modo === 'terraza' ? mesasTerraza : mesas).map((m) => (
                   <button
                     key={m.id}
                     onClick={() => abrirOMantenerPedidoMesa(m)}
-                    style={{
-                      padding: '12px 8px',
-                      borderRadius: '4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      backgroundColor: m.estado === 'ocupada' ? '#fca5a5' : '#86efac',
-                      color: m.estado === 'ocupada' ? '#7f1d1d' : '#14532d',
-                      fontWeight: '600',
-                      fontSize: '12px',
-                      position: 'relative',
-                    }}
+                    className={`${styles.mesaBtn} ${
+                      m.estado === 'ocupada' ? styles.mesaOcupada : styles.mesaLibre
+                    }`}
                   >
                     {m.nombre}
                     {m.pedido_abierto_id && (
-                      <span
-                        style={{
-                          position: 'absolute',
-                          top: '2px',
-                          right: '2px',
-                          backgroundColor: '#dc2626',
-                          color: 'white',
-                          fontSize: '8px',
-                          padding: '2px 4px',
-                          borderRadius: '2px',
-                        }}
-                      >
-                        ●
-                      </span>
+                      <span className={styles.mesaBadge}>●</span>
                     )}
                   </button>
                 ))}
               </div>
               {mesaSeleccionada && (
-                <p style={{ marginTop: '16px', fontSize: '14px', color: '#6b7280' }}>
-                  Mesa activa: <b>{mesaSeleccionada.nombre}</b>
+                <p className={styles.smallTip}>
+                  Mesa activa: <strong>{mesaSeleccionada.nombre}</strong>
                 </p>
               )}
             </div>
@@ -1050,13 +988,12 @@ const Ventas = () => {
 
           {modo === 'delivery' && (
             <div>
-              <h2 style={{ marginTop: 0, fontSize: '18px', fontWeight: '600' }}>Delivery</h2>
-              <div style={{ display: 'grid', gap: '12px' }}>
+              <h2 className={styles.cardTitle}>Delivery</h2>
+              <div className={styles.formGrid2}>
                 <input
                   placeholder="Teléfono"
                   value={deliveryData.telefono}
                   onChange={(e) => setDeliveryData({ ...deliveryData, telefono: e.target.value })}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                 />
                 <input
                   placeholder="Costo envío"
@@ -1064,38 +1001,59 @@ const Ventas = () => {
                   min="0"
                   value={deliveryData.costo_envio}
                   onChange={(e) => setDeliveryData({ ...deliveryData, costo_envio: e.target.value })}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                 />
+              </div>
+              <div className={styles.formGrid2}>
                 <input
                   placeholder="Dirección"
                   value={deliveryData.direccion}
                   onChange={(e) => setDeliveryData({ ...deliveryData, direccion: e.target.value })}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                 />
                 <input
                   placeholder="Referencia"
                   value={deliveryData.referencia}
                   onChange={(e) => setDeliveryData({ ...deliveryData, referencia: e.target.value })}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                 />
+              </div>
+              <div className={styles.formGrid2}>
                 <input
                   placeholder="Repartidor"
                   value={deliveryData.repartidor}
                   onChange={(e) => setDeliveryData({ ...deliveryData, repartidor: e.target.value })}
-                  style={{ padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
                 />
+              </div>
+              <div className={styles.rowGap}>
                 <button
                   onClick={abrirOMantenerPedidoDelivery}
-                  style={{ padding: '8px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                  className={styles.secondaryButtonSmall}
                 >
                   Abrir pedido Delivery
                 </button>
               </div>
               {pedidoId && (
-                <p style={{ marginTop: '12px', fontSize: '14px', color: '#6b7280' }}>
+                <p className={styles.smallTip}>
                   Pedido activo: <strong>{pedidoId.slice(0, 8)}…</strong>
                 </p>
               )}
+            </div>
+          )}
+
+          {modo === 'mostrador' && (
+            <div>
+              <h2 className={styles.cardTitle}>Información</h2>
+              <p className={styles.smallTip}>
+                Modo mostrador: venta directa sin pedido previo.
+              </p>
+              <h3 className={styles.subTitle}>Atajos de teclado</h3>
+              <p className={styles.smallTip}>
+                <strong>F2:</strong> Buscar producto
+                <br />
+                <strong>F3:</strong> Buscar cliente
+                <br />
+                <strong>↑/↓:</strong> Navegar productos
+                <br />
+                <strong>Enter:</strong> Agregar producto
+              </p>
             </div>
           )}
         </div>
@@ -1103,55 +1061,27 @@ const Ventas = () => {
 
       {/* Modal Nuevo Cliente */}
       {mostrarModalCliente && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 50,
-          }}
-          onClick={() => setMostrarModalCliente(false)}
-        >
-          <div
-            style={{
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '8px',
-              maxWidth: '400px',
-              width: '100%',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0, marginBottom: '16px' }}>Agregar Nuevo Cliente</h3>
-            <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>Nombre:</label>
+        <div className={styles.modalOverlay} onClick={() => setMostrarModalCliente(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h3>Agregar Nuevo Cliente</h3>
+            <div className={styles.formGroup}>
+              <label>Nombre:</label>
               <input
                 type="text"
                 value={nuevoClienteData.nombre}
                 onChange={(e) => setNuevoClienteData({ ...nuevoClienteData, nombre: e.target.value })}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
               />
             </div>
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: '500' }}>RUC:</label>
+            <div className={styles.formGroup}>
+              <label>RUC:</label>
               <input
                 type="text"
                 value={nuevoClienteData.ruc}
                 onChange={(e) => setNuevoClienteData({ ...nuevoClienteData, ruc: e.target.value })}
-                style={{ width: '100%', padding: '8px', borderRadius: '4px', border: '1px solid #d1d5db' }}
               />
             </div>
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-              <button
-                onClick={handleGuardarNuevoCliente}
-                style={{ padding: '8px 16px', backgroundColor: '#10b981', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-              >
+            <div className={styles.modalActions}>
+              <button onClick={handleGuardarNuevoCliente} className={styles.primaryButton}>
                 Guardar
               </button>
               <button
@@ -1159,7 +1089,7 @@ const Ventas = () => {
                   setMostrarModalCliente(false);
                   setMensaje('');
                 }}
-                style={{ padding: '8px 16px', backgroundColor: '#6b7280', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                className={styles.secondaryButton}
               >
                 Cancelar
               </button>
